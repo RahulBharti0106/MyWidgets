@@ -80,5 +80,3 @@ Output executable:
 - Add DesktopTodo.exe in Shell:Startup folder to run it automatically
 
 ## GitHub
-
-Push source files, not generated build artifacts. Keep `build/`, `dist/`, `__pycache__/`, and `*.pyc` out of Git.
