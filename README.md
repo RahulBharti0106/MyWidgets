@@ -80,3 +80,6 @@ Output executable:
 - Add DesktopTodo.exe in Shell:Startup folder to run it automatically
 
 ## GitHub
+
+- Repository: https://github.com/RahulBharti0106/MyWidgets
+- Download v1.0.0 (.exe): https://github.com/RahulBharti0106/MyWidgets/releases/tag/v1.0.0
