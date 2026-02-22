@@ -70,12 +70,12 @@ CAL_DARK = {
     "day_text": "#e8e8f0",  # normal day number
     "day_text_muted": "#555566",  # days from adjacent months
     "today_bg": "#27ae60",  # today highlight (green)
-    "today_text": "#ffffff",
-    "past_bg": "#4a1a1a",  # past date background (red-tinted)
-    "past_text": "#cc4444",  # past date text (red)
+    "today_text": "#f9fafa",
+    "past_bg": "#8D0808",  # past date background (red-tinted)
+    "past_text": "#080000",  # past date text (red)
     "header_bg": "rgba(28,28,32,0.97)",
-    "weekday_text": "#8888aa",  # Sun Mon Tue ...
-    "dot_color": "#5b9cf6",  # task-due indicator dot
+    "weekday_text": "#068edd",  # Sun Mon Tue ...
+    "dot_color": "#efdf0a",  # task-due indicator dot
     "nav_btn": "#2a2a3a",
     "nav_btn_hover": "#3a3a5a",
     "today_btn_bg": "#2a2a3a",
@@ -847,6 +847,8 @@ class CalendarWidget(QWidget):
                     has_task = cell_date in self._due_dates
                     cell = DayCell(day, True, is_today, is_past, has_task, t, fs)
                 self._grid_layout.addWidget(cell, row_idx, col_idx)
+        for empty_row in range(len(cal), 6):
+            self._grid_layout.setRowStretch(empty_row, 0)
 
     @staticmethod
     def _month_calendar_sunday_first(year: int, month: int) -> list:
