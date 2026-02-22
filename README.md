@@ -5,6 +5,33 @@ Desktop productivity widgets for Windows built with Python and PyQt6:
 - `DesktopTodo`: a desktop to-do widget with due dates, reminders, tray support, and startup option
 - `DesktopCalendar`: a desktop calendar widget that reads due dates from to-do tasks and shows indicator dots
 
+## 🚀 Latest Release
+
+### v1.0.0 - Initial Release
+
+**Download**: [MyWidgets v1.0.0 Executable (.exe)](https://github.com/RahulBharti0106/MyWidgets/releases/tag/v1.0.0)
+
+The first stable release of MyWidgets is now available for download. Simply download the `.exe` file and run it directly—no installation or Python knowledge required.
+
+**What's Included**:
+
+- ✨ Desktop To-Do widget with task management
+- 📅 Calendar widget with visual task indicators
+- 🎨 Dark and light theme support
+- 🔔 Windows toast reminders for due tasks
+- ⚙️ Customizable settings (position, size, opacity, theme)
+- 🚀 Startup support (auto-run on Windows boot)
+- 🎯 Frameless, always-on-top widgets that stay in the background
+
+**Quick Start for Users**:
+
+1. Download `DesktopTodo.exe` from the [releases page](https://github.com/RahulBharti0106/MyWidgets/releases/tag/v1.0.0)
+2. Run the executable
+3. Both To-Do and Calendar widgets will launch automatically
+4. Right-click or drag widgets to customize them
+
+[View Full Release Notes](https://github.com/RahulBharti0106/MyWidgets/releases/tag/v1.0.0)
+
 ## Features
 
 - Frameless desktop widgets that stay in the background layer
@@ -25,15 +52,23 @@ Desktop productivity widgets for Windows built with Python and PyQt6:
 ## Requirements
 
 - Windows 10/11
-- Python 3.10+
-- Packages:
+- Python 3.10+ (only required for development/running from source)
+- Packages (for development):
   - `PyQt6`
   - `winotify` (optional, for toast reminders)
   - `pyinstaller` (optional, only for building `.exe`)
 
 ## Setup
 
+### For Users (Using Executable)
+
+Simply download and run `DesktopTodo.exe` from the [latest release](https://github.com/RahulBharti0106/MyWidgets/releases/tag/v1.0.0). No installation steps needed!
+
+### For Developers (From Source)
+
 ```powershell
+git clone https://github.com/RahulBharti0106/MyWidgets.git
+cd MyWidgets
 python -m venv .venv
 .venv\Scripts\activate
 pip install PyQt6 winotify pyinstaller
@@ -63,23 +98,23 @@ python calendar_widget.py
 
 Runtime data is stored in `%APPDATA%` (not in this repo):
 
-- `%APPDATA%\DesktopTodo\tasks.json`
-- `%APPDATA%\DesktopTodo\settings.json`
-- `%APPDATA%\DesktopCalendar\settings.json`
+- `%APPDATA%\MyWidgets\tasks.json`
+- `%APPDATA%\MyWidgets\settings.json`
+- `%APPDATA%\MyWidgets\calendar_settings.json`
 
 ## Build Executable (Optional)
 
+To build the standalone executable yourself:
+
 ```powershell
-pyinstaller DesktopTodo.spec
+pyinstaller MyWidgets.spec
 ```
 
 Output executable:
 
-- `dist\DesktopTodo.exe`
+- `dist\MyWidgets.exe`
 
-- Add DesktopTodo.exe in Shell:Startup folder to run it automatically
+**To run automatically on Windows startup**:
 
-## GitHub
-
-- Repository: https://github.com/RahulBharti0106/MyWidgets
-- Download v1.0.0 (.exe): https://github.com/RahulBharti0106/MyWidgets/releases/tag/v1.0.0
+- Add `MyWidgets.exe` to your Windows Startup folder (`Shell:Startup`), or
+- Use the app's built-in startup option in settings
