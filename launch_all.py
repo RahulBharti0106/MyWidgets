@@ -11,19 +11,18 @@ Right-click either tray icon → Exit to close that widget.
 """
 
 import sys
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import Qt
 
-# Import both widgets
-from desktop_widget import DesktopWidget
-from calendar_widget import CalendarWidget
+from PyQt6.QtWidgets import QApplication
+
+from calendar.cal_widget import CalendarWidget
+from todo.todo_widget import DesktopTodoWidget
 
 
 def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
 
-    todo = DesktopWidget()
+    todo = DesktopTodoWidget()
     calendar = CalendarWidget()
 
     todo.show()

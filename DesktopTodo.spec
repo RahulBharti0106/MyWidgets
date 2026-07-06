@@ -2,11 +2,11 @@
 
 
 a = Analysis(
-    ['desktop_widget.py'],
+    ['launch_all.py'],
     pathex=[],
     binaries=[],
     datas=[('assets', 'assets')],
-    hiddenimports=[],
+    hiddenimports=['todo', 'calendar', 'shared'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='DesktopTodo',
+    name='MyWidgets',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
