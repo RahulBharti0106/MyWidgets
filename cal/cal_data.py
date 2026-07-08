@@ -4,8 +4,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-from calendar import cal_theme as TC
-
+from cal import cal_theme as TC
 
 APP_NAME = "DesktopCalendar"
 TODO_APP_NAME = "DesktopTodo"

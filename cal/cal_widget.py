@@ -1,8 +1,7 @@
 import sys
+import calendar as _calendar
 from datetime import date
-from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-import sysconfig
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -23,25 +22,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from calendar.cal_data import APP_NAME, CalStorage
-from calendar.cal_day_popup import DayTaskPopup
-from calendar.cal_theme import get_dialog_theme
-from calendar.cal_ui import CalUI
+from cal.cal_data import APP_NAME, CalStorage
+from cal.cal_day_popup import DayTaskPopup
+from cal.cal_theme import get_dialog_theme
+from cal.cal_ui import CalUI
 from shared.startup_manager import StartupManager
-
-
-def _load_stdlib_calendar():
-    stdlib_dir = Path(sysconfig.get_paths()["stdlib"])
-    calendar_py = stdlib_dir / "calendar.py"
-    spec = spec_from_file_location("_stdlib_calendar", calendar_py)
-    module = module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-_calendar = _load_stdlib_calendar()
-
 
 class JumpDialog(QDialog):
     def __init__(self, current_year: int, current_month: int, parent=None):

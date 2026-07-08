@@ -14,8 +14,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from calendar import cal_theme as TC
-
+from cal import cal_theme as TC
 
 DAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
@@ -79,8 +78,7 @@ class DayCell(QFrame):
         hover_bg = t["day_bg_hover"] if not self._is_today else t["today_bg"]
         radius = max(6, fs // 2)
 
-        self.setStyleSheet(
-            f"""
+        self.setStyleSheet(f"""
             DayCell {{
                 background:    {bg};
                 border:        none;
@@ -89,8 +87,7 @@ class DayCell(QFrame):
             DayCell:hover {{
                 background:    {hover_bg};
             }}
-        """
-        )
+        """)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -99,16 +96,14 @@ class DayCell(QFrame):
         self._lbl = QLabel(str(self._day))
         self._lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self._lbl.setStyleSheet(
-            f"""
+        self._lbl.setStyleSheet(f"""
             color:           {fg};
             font-size:       {fs}px;
             font-family:     '{TC.FONT_FAMILY}';
             font-weight:     {weight};
             text-decoration: {strike};
             background:      transparent;
-        """
-        )
+        """)
         layout.addWidget(self._lbl)
 
         if self._task_count > 0 and self._this_month and not self._is_past:
@@ -116,8 +111,7 @@ class DayCell(QFrame):
             self._badge_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             self._badge_btn.setMinimumWidth(16)
             self._badge_btn.setFixedHeight(14)
-            self._badge_btn.setStyleSheet(
-                f"""
+            self._badge_btn.setStyleSheet(f"""
                 QPushButton {{
                     background: rgba(239,223,10,0.2);
                     color: {t["dot_color"]};
@@ -126,8 +120,7 @@ class DayCell(QFrame):
                     border: none;
                     padding: 0 4px;
                 }}
-            """
-            )
+            """)
             self._badge_btn.clicked.connect(
                 lambda: self.badge_clicked.emit(self._cell_date, self._badge_btn)
             )
@@ -234,8 +227,7 @@ class CalUI:
         t = TC.get_cal_theme(dark)
         self.parent.setWindowOpacity(settings.get("opacity", 0.92))
 
-        self.parent.card.setStyleSheet(
-            f"""
+        self.parent.card.setStyleSheet(f"""
             QFrame#card {{
                 background:    {t["card_bg"]};
                 border:        1px solid {t["border"]};
@@ -245,8 +237,7 @@ class CalUI:
                 color:      {t["text"]};
                 background: transparent;
             }}
-        """
-        )
+        """)
 
         nav_style = f"""
             QPushButton {{
@@ -263,8 +254,7 @@ class CalUI:
         self.parent._prev_btn.setStyleSheet(nav_style)
         self.parent._next_btn.setStyleSheet(nav_style)
 
-        self.parent._month_lbl.setStyleSheet(
-            f"""
+        self.parent._month_lbl.setStyleSheet(f"""
             QPushButton {{
                 background:  transparent;
                 color:       {t["text"]};
@@ -276,11 +266,9 @@ class CalUI:
                 padding-left: 4px;
             }}
             QPushButton:hover {{ color: {t["dot_color"]}; }}
-        """
-        )
+        """)
 
-        self.parent._today_btn.setStyleSheet(
-            f"""
+        self.parent._today_btn.setStyleSheet(f"""
             QPushButton {{
                 background:    {t["today_btn_bg"]};
                 color:         {t["today_bg"]};
@@ -292,28 +280,23 @@ class CalUI:
                 padding:       0 8px;
             }}
             QPushButton:hover {{ background: {t["today_btn_hover"]}; }}
-        """
-        )
+        """)
 
-        self.parent._settings_btn.setStyleSheet(
-            f"""
+        self.parent._settings_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {t["text_muted"]};
                 border: none; font-size: 15px;
             }}
             QPushButton:hover {{ color: {t["text"]}; }}
-        """
-        )
+        """)
 
         for lbl in self.parent._weekday_labels:
-            lbl.setStyleSheet(
-                f"""
+            lbl.setStyleSheet(f"""
                 color:       {t["weekday_text"]};
                 font-size:   11px;
                 font-family: '{TC.FONT_FAMILY}';
                 font-weight: bold;
-            """
-            )
+            """)
 
     def rebuild_grid(self, year, month, today, task_counts):
         while self.parent._grid_layout.count():

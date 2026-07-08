@@ -7,8 +7,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from calendar import cal_theme as TC
-
+from cal import cal_theme as TC
 
 TODO_TASKS = Path(os.getenv("APPDATA", Path.home())) / "DesktopTodo" / "tasks.json"
 
@@ -83,8 +82,7 @@ class DayTaskPopup(QFrame):
             layout.addWidget(more)
 
     def _apply_style(self):
-        self.setStyleSheet(
-            f"""
+        self.setStyleSheet(f"""
             QFrame#dayTaskPopup {{
                 background: {TC.CAL_DARK["card_bg"]};
                 border: 1px solid {TC.CAL_DARK["border"]};
@@ -94,8 +92,7 @@ class DayTaskPopup(QFrame):
                 background: transparent;
                 color: {TC.CAL_DARK["text"]};
             }}
-        """
-        )
+        """)
 
     def _load_tasks_for_date(self):
         if not TODO_TASKS.exists():
