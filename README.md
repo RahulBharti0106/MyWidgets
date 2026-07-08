@@ -1,85 +1,107 @@
 # MyWidgets
 
-Desktop productivity widgets for Windows built with Python and PyQt6:
+A Windows desktop productivity suite built with Python and PyQt6.
 
-- `DesktopTodo`: a desktop to-do widget with due dates, reminders, tray support, and startup option
-- `DesktopCalendar`: a desktop calendar widget that reads due dates from to-do tasks and shows indicator dots
+This repository contains two desktop widgets:
 
-## Features
+- `DesktopTodo`: a frameless, always-on-bottom to-do widget with due dates, reminders, categories, and a system tray menu.
+- `DesktopCalendar`: a desktop calendar widget that displays badge counts for due tasks and supports day popups, navigation, and startup launch.
 
-- Frameless desktop widgets that stay in the background layer
-- Drag to move and resize support
-- Persistent settings (position, size, opacity, theme, startup)
-- Dark and light mode through a shared theme config
-- Optional Windows toast reminders for due tasks (To-Do widget)
+## Key Features
 
-## Project Structure
+- Frameless, translucent desktop widgets that stay below other windows
+- Drag to move widgets and resize them freely
+- System tray integration for quick access, restore, and exit
+- Persistent local settings for position, size, opacity, and startup behavior
+- Optional Windows toast reminders for due and upcoming tasks (`winotify`)
+- Calendar badge counts from pending To-Do due dates
+- Support for task categories and important tasks
 
-- `desktop_widget.py`: main To-Do widget
-- `calendar_widget.py`: main Calendar widget
-- `launch_all.py`: starts both widgets in one process
-- `theme_config.py`: shared visual and behavior config
-- `assets/icon.ico`: icon asset used for packaging
-- `DesktopTodo.spec`: PyInstaller build spec (for executable build)
+## Repository Layout
+
+- `launch_all.py` - start both widgets together
+- `todo/` - Desktop Todo app source
+  - `todo/todo_widget.py` - main to-do widget
+  - `todo/todo_ui.py` - to-do UI components and task list layout
+  - `todo/todo_modal.py` - add task modal dialog
+  - `todo/todo_logic.py` - task filtering and reminder logic
+  - `todo/todo_data.py` - storage management for tasks and settings
+  - `todo/todo_theme.py` - theme constants and styles
+- `cal/` - Desktop Calendar app source
+  - `cal/cal_widget.py` - main calendar widget
+  - `cal/cal_ui.py` - calendar UI components and grid layout
+  - `cal/cal_day_popup.py` - popup for day task details
+  - `cal/cal_data.py` - calendar settings and due task count loader
+  - `cal/cal_theme.py` - calendar theme styling
+- `shared/` - shared utilities
+  - `shared/startup_manager.py` - Windows startup registry helper
+- `assets/` - icon and asset files
+- `DesktopTodo.spec`, `MyWidgets.spec` - PyInstaller spec files
 
 ## Requirements
 
-- Windows 10/11
-- Python 3.10+
-- Packages:
+- Windows 10 or Windows 11
+- Python 3.10 or newer
+- Required packages:
   - `PyQt6`
-  - `winotify` (optional, for toast reminders)
-  - `pyinstaller` (optional, only for building `.exe`)
+- Optional packages:
+  - `winotify` (for Windows toast notifications)
+  - `pyinstaller` (for building Windows executables)
 
 ## Setup
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\activate
-pip install PyQt6 winotify pyinstaller
+pip install PyQt6
+pip install winotify  # optional
+pip install pyinstaller  # optional
 ```
 
-## Run
+## Running the App
 
-Run both widgets:
+Start both widgets together:
 
 ```powershell
 python launch_all.py
 ```
 
-Run only To-Do:
+Start only the To-Do widget:
 
 ```powershell
-python desktop_widget.py
+python todo/todo_widget.py
 ```
 
-Run only Calendar:
+Start only the Calendar widget:
 
 ```powershell
-python calendar_widget.py
+python cal/cal_widget.py
 ```
+
+## Windows Startup Support
+
+Both widgets can register themselves to run at Windows startup using the shared `StartupManager` utility in `shared/startup_manager.py`.
+
+Startup entries are managed via the Windows registry key:
+
+- `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 
 ## Data Storage
 
-Runtime data is stored in `%APPDATA%` (not in this repo):
+User data is stored under `%APPDATA%`:
 
 - `%APPDATA%\DesktopTodo\tasks.json`
 - `%APPDATA%\DesktopTodo\settings.json`
 - `%APPDATA%\DesktopCalendar\settings.json`
 
-## Build Executable (Optional)
+The calendar widget also reads due tasks from the To-Do storage to display badge counts.
 
-```powershell
-pyinstaller DesktopTodo.spec
-```
+## Release
 
-Output executable:
+Download the latest release from GitHub Releases:
 
-- `dist\DesktopTodo.exe`
+- <https://github.com/RahulBharti0106/MyWidgets/releases/tag/V2.0>
 
-- Add DesktopTodo.exe in Shell:Startup folder to run it automatically
+---
 
-## GitHub
-
-- Repository: https://github.com/RahulBharti0106/MyWidgets
-- Download v1.0.0 (.exe): https://github.com/RahulBharti0106/MyWidgets/releases/tag/v1.0.0
+If you want, I can also add a `requirements.txt` and a short user guide for the task creation workflow.
