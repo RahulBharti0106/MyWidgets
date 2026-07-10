@@ -86,6 +86,13 @@ Startup entries are managed via the Windows registry key:
 
 - `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 
+## Auto-start on Windows boot 
+To launch MyWidgets automatically when Windows starts:
+1. Press Win + R, type shell:startup, press Enter
+2. Right-click inside the folder → New → Shortcut
+3. Point it to MyWidgets.exe inside the extracted folder
+4. Click Finish
+
 ## Data Storage
 
 User data is stored under `%APPDATA%`:
