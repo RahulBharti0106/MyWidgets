@@ -7,6 +7,15 @@ __pycache__/
 venv/
 env/
 .venv-build
+
+# Environment files / local secrets
+.env
+server/.env
+
+# Local databases
+mywidgets.db
+server/mywidgets.db
+
 # Build outputs
 build/
 dist/
