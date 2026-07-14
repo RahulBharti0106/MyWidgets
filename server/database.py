@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
+from sqlalchemy import BigInteger
 from sqlmodel import Field, Relationship, SQLModel, Session, create_engine, select
 
 
@@ -29,7 +30,9 @@ def generate_api_key(telegram_id: int, created_at: str) -> str:
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    telegram_id: int = Field(unique=True, index=True)
+    telegram_id: int = Field(
+        sa_type=BigInteger, unique=True, index=True
+    )
     username: Optional[str] = None
     api_key: str = Field(unique=True, index=True)
     created_at: str
