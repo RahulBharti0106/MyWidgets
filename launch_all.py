@@ -2,7 +2,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from calendar.cal_widget import CalendarWidget
+from cal.cal_widget import CalendarWidget
 from todo.todo_widget import DesktopTodoWidget
 
 

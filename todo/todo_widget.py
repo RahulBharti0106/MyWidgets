@@ -23,6 +23,7 @@ from todo import todo_theme as TC
 from todo.todo_data import APP_NAME, StorageManager, Task
 from todo.todo_logic import NotificationManager, filter_tasks
 from todo.todo_modal import AddTaskModal
+from todo.todo_sync import SyncManager
 from todo.todo_ui import TodoUI
 
 
@@ -101,6 +102,7 @@ class DesktopTodoWidget(QWidget):
         self._setup_tray()
         self._apply_theme()
         self._setup_timers()
+        self._setup_sync()
 
         if self.settings.get("startup", TC.DEFAULT_STARTUP):
             StartupManager.enable(APP_NAME)
@@ -154,6 +156,11 @@ class DesktopTodoWidget(QWidget):
         self._notif_timer.timeout.connect(self._check_reminders)
         self._notif_timer.start(TC.REMINDER_INTERVAL_MS)
 
+    def _setup_sync(self):
+        self.sync_manager = SyncManager(self)
+        self.sync_manager.tasks_updated.connect(self._reload_tasks_from_disk)
+        self.sync_manager.start()
+
     def _current_category(self) -> str:
         return self.category_filter.currentData() or "all"
 
@@ -185,7 +192,7 @@ class DesktopTodoWidget(QWidget):
                 is_important=is_important,
             )
         )
-        StorageManager.save_tasks(self.tasks)
+        SyncManager.save_local_tasks(self.tasks, dirty_ids={self.tasks[-1].id})
         self._populate_tasks()
 
     def _toggle_task(self, task_id: str):
@@ -195,12 +202,13 @@ class DesktopTodoWidget(QWidget):
                 if not t.completed:
                     t.reminder_sent = False
                 break
-        StorageManager.save_tasks(self.tasks)
+        SyncManager.save_local_tasks(self.tasks, dirty_ids={task_id})
         self._populate_tasks()
 
     def _delete_task(self, task_id: str):
         self.tasks = [t for t in self.tasks if t.id != task_id]
-        StorageManager.save_tasks(self.tasks)
+        SyncManager.queue_delete(task_id)
+        SyncManager.save_local_tasks(self.tasks)
         self._populate_tasks()
 
     def _toggle_task_importance(self, task_id: str):
@@ -208,7 +216,7 @@ class DesktopTodoWidget(QWidget):
             if t.id == task_id:
                 t.is_important = not t.is_important
                 break
-        StorageManager.save_tasks(self.tasks)
+        SyncManager.save_local_tasks(self.tasks, dirty_ids={task_id})
         self._populate_tasks()
 
     def _open_settings(self):
@@ -224,8 +232,18 @@ class DesktopTodoWidget(QWidget):
             self._apply_theme()
 
     def _check_reminders(self):
+        before = {task.id: task.reminder_sent for task in self.tasks}
         NotificationManager.check_and_notify(self.tasks)
-        StorageManager.save_tasks(self.tasks)
+        dirty_ids = {
+            task.id
+            for task in self.tasks
+            if task.reminder_sent != before.get(task.id, task.reminder_sent)
+        }
+        SyncManager.save_local_tasks(self.tasks, dirty_ids=dirty_ids)
+
+    def _reload_tasks_from_disk(self):
+        self.tasks = StorageManager.load_tasks()
+        self._populate_tasks()
 
     def _save_state(self):
         geo = self.geometry()
@@ -250,6 +268,8 @@ class DesktopTodoWidget(QWidget):
 
     def _exit_app(self):
         self._save_state()
+        if hasattr(self, "sync_manager"):
+            self.sync_manager.stop()
         self.tray.hide()
         QApplication.quit()
 
