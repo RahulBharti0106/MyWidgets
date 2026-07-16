@@ -171,6 +171,10 @@ class SyncManager(QThread):
             local_order = [task["id"] for task in local_tasks]
             local_map = {task["id"]: dict(task) for task in local_tasks}
             changed = False
+            removed_task_ids = set()
+            server_updates: dict[str, dict] = {}
+            cleared_pending_sync_ids = set()
+            confirmed_deleted_ids = set()
 
             for server_task in sync_payload.get("tasks", []):
                 task_id = server_task["id"]
@@ -181,15 +185,18 @@ class SyncManager(QThread):
                     if task_id in local_map:
                         local_map.pop(task_id, None)
                         local_order = [item for item in local_order if item != task_id]
+                        removed_task_ids.add(task_id)
                         changed = True
                     if task_id in pending_deletions:
                         pending_deletions.discard(task_id)
+                        confirmed_deleted_ids.add(task_id)
                     continue
 
                 server_record = self._server_to_local_record(server_task)
                 if task_id not in local_map:
                     local_map[task_id] = server_record
                     local_order.append(task_id)
+                    server_updates[task_id] = server_record
                     changed = True
                     continue
 
@@ -199,6 +206,7 @@ class SyncManager(QThread):
                 server_updated = self._parse_iso(server_task.get("updated_at"))
                 if server_updated >= local_updated and local_map[task_id] != server_record:
                     local_map[task_id] = server_record
+                    server_updates[task_id] = server_record
                     changed = True
 
             for task_id in list(local_order):
@@ -228,6 +236,8 @@ class SyncManager(QThread):
                         response = client.patch(f"/tasks/{task_id}", json=patch_payload)
                     response.raise_for_status()
                     local_map[task_id] = self._server_to_local_record(response.json())
+                    server_updates[task_id] = local_map[task_id]
+                    cleared_pending_sync_ids.add(task_id)
                     changed = True
                 except httpx.HTTPError as exc:
                     print(f"Push failed for task {task_id}: {exc}")
@@ -238,17 +248,42 @@ class SyncManager(QThread):
                     response = client.delete(f"/tasks/{task_id}")
                     if response.status_code in (200, 404):
                         pending_deletions.discard(task_id)
+                        confirmed_deleted_ids.add(task_id)
                 except httpx.HTTPError as exc:
                     print(f"Delete sync skipped for task {task_id}: {exc}")
                     continue
 
-        merged_tasks = [local_map[task_id] for task_id in local_order if task_id in local_map]
+        fresh_tasks = self._load_tasks_payload()
+        fresh_order = [task["id"] for task in fresh_tasks]
+        fresh_map = {task["id"]: dict(task) for task in fresh_tasks}
+
+        for task_id in removed_task_ids | confirmed_deleted_ids:
+            if task_id in fresh_map:
+                fresh_map.pop(task_id, None)
+                fresh_order = [item for item in fresh_order if item != task_id]
+
+        for task_id, record in server_updates.items():
+            fresh_map[task_id] = dict(record)
+            if task_id not in fresh_order:
+                fresh_order.append(task_id)
+
+        for task_id in cleared_pending_sync_ids:
+            if task_id in fresh_map:
+                fresh_map[task_id]["pending_sync"] = False
+
+        merged_tasks = [fresh_map[task_id] for task_id in fresh_order if task_id in fresh_map]
         self._write_tasks_payload(merged_tasks)
-        settings[self.SETTINGS_SYNC_KEY] = sync_payload.get(
+
+        fresh_settings = self._load_settings_payload()
+        fresh_pending_deletions = set(
+            fresh_settings.get(self.SETTINGS_PENDING_DELETES_KEY, [])
+        )
+        fresh_pending_deletions.difference_update(confirmed_deleted_ids)
+        fresh_settings[self.SETTINGS_SYNC_KEY] = sync_payload.get(
             "server_time", last_sync_timestamp
         )
-        settings[self.SETTINGS_PENDING_DELETES_KEY] = list(pending_deletions)
-        self._save_settings_payload(settings)
+        fresh_settings[self.SETTINGS_PENDING_DELETES_KEY] = list(fresh_pending_deletions)
+        self._save_settings_payload(fresh_settings)
 
         if changed:
             self.tasks_updated.emit()

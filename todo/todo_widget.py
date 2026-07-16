@@ -70,8 +70,7 @@ class SettingsPanel(QDialog):
         layout.addWidget(ok_btn)
 
         t = TC.get_dialog_theme(True)
-        self.setStyleSheet(
-            f"""
+        self.setStyleSheet(f"""
             QDialog {{ background: {t["bg"]}; color: {t["text"]}; }}
             QLabel, QCheckBox {{ color: {t["text"]}; background: transparent; }}
             QPushButton {{
@@ -79,8 +78,7 @@ class SettingsPanel(QDialog):
                 border-radius: 6px; padding: 8px; border: none;
             }}
             QPushButton:hover {{ background: {t["btn_hover"]}; }}
-        """
-        )
+        """)
 
     def get_result(self):
         return {

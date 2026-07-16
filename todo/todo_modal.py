@@ -1,14 +1,16 @@
 from datetime import datetime
 
-from PyQt6.QtCore import QDateTime, Qt
+from PyQt6.QtCore import QDate, QDateTime, QTime, Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
-    QDateTimeEdit,
+    QDateEdit,
     QDialog,
     QHBoxLayout,
+    QAbstractSpinBox,
     QLabel,
     QLineEdit,
     QPushButton,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -94,25 +96,60 @@ class AddTaskModal(QDialog):
         self.has_due.setChecked(bool(task and task.due))
         layout.addWidget(self.has_due)
 
-        self.due_dt = QDateTimeEdit()
-        self.due_dt.setCalendarPopup(True)
-        self.due_dt.setDisplayFormat("MMM dd yyyy  HH:mm")
+        self.due_controls = QWidget()
+        due_controls_layout = QVBoxLayout(self.due_controls)
+        due_controls_layout.setContentsMargins(0, 0, 0, 0)
+        due_controls_layout.setSpacing(6)
+
+        preset_row = QHBoxLayout()
+        preset_row.setContentsMargins(0, 0, 0, 0)
+        preset_row.setSpacing(6)
+
+        today_btn = QPushButton("Today")
+        today_btn.setFixedHeight(28)
+        today_btn.clicked.connect(lambda: self._set_due_preset(0))
+        preset_row.addWidget(today_btn, stretch=1)
+
+        tomorrow_btn = QPushButton("Tomorrow")
+        tomorrow_btn.setFixedHeight(28)
+        tomorrow_btn.clicked.connect(lambda: self._set_due_preset(1))
+        preset_row.addWidget(tomorrow_btn, stretch=1)
+
+        due_controls_layout.addLayout(preset_row)
+
+        manual_row = QHBoxLayout()
+        manual_row.setContentsMargins(0, 0, 0, 0)
+        manual_row.setSpacing(6)
+
+        self.due_date = QDateEdit()
+        self.due_date.setCalendarPopup(True)
+        self.due_date.setDisplayFormat("MMM dd yyyy")
+        manual_row.addWidget(self.due_date, stretch=1)
+
+        self.due_time = QTimeEdit()
+        self.due_time.setDisplayFormat("HH:mm")
+        self.due_time.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        manual_row.addWidget(self.due_time, stretch=1)
+
+        due_controls_layout.addLayout(manual_row)
+
         if task and task.due:
             try:
                 dt = datetime.fromisoformat(task.due)
-                self.due_dt.setDateTime(
-                    QDateTime.fromString(
-                        dt.strftime("%Y-%m-%d %H:%M"), "yyyy-MM-dd HH:mm"
-                    )
-                )
+                self.due_date.setDate(QDate(dt.year, dt.month, dt.day))
+                self.due_time.setTime(QTime(dt.hour, dt.minute))
             except ValueError:
-                self.due_dt.setDateTime(QDateTime.currentDateTime().addSecs(3600))
+                fallback = QDateTime.currentDateTime().addSecs(3600)
+                self.due_date.setDate(fallback.date())
+                self.due_time.setTime(fallback.time())
         else:
-            self.due_dt.setDateTime(QDateTime.currentDateTime().addSecs(3600))
+            fallback = QDateTime.currentDateTime().addSecs(3600)
+            self.due_date.setDate(fallback.date())
+            self.due_time.setTime(fallback.time())
 
-        self.due_dt.setEnabled(self.has_due.isChecked())
-        self.has_due.toggled.connect(self.due_dt.setEnabled)
-        layout.addWidget(self.due_dt)
+        self.due_controls.setVisible(self.has_due.isChecked())
+        self.has_due.toggled.connect(self.due_controls.setVisible)
+        layout.addWidget(self.due_controls)
 
         btns = QHBoxLayout()
         self.ok_btn = QPushButton("Add" if not task else "Save")
@@ -133,6 +170,14 @@ class AddTaskModal(QDialog):
 
     def _sync_ok_state(self):
         self.ok_btn.setEnabled(bool(self.title_input.text().strip()))
+
+    def _set_due_preset(self, days_ahead: int):
+        now = QDateTime.currentDateTime()
+        preset = now.addDays(days_ahead)
+        preset.setTime(QTime(23, 59))
+        self.has_due.setChecked(True)
+        self.due_date.setDate(preset.date())
+        self.due_time.setTime(preset.time())
 
     def _sync_category_buttons(self):
         for value, btn in self._category_buttons.items():
@@ -156,11 +201,10 @@ class AddTaskModal(QDialog):
             "border-radius: 6px; padding: 4px 8px;"
         ).format(bg=widget_theme["btn_bg"])
 
-        self.setStyleSheet(
-            f"""
+        self.setStyleSheet(f"""
             QDialog {{ background: {t["bg"]}; color: {t["text"]}; }}
             QLabel, QCheckBox {{ color: {t["text"]}; background: transparent; }}
-            QLineEdit, QDateTimeEdit {{
+            QLineEdit, QDateEdit, QTimeEdit {{
                 background: {t["input_bg"]}; color: {t["text"]};
                 border: 1px solid {t["border"]}; border-radius: 6px; padding: 6px;
             }}
@@ -169,8 +213,7 @@ class AddTaskModal(QDialog):
                 border-radius: 6px; padding: 8px 18px; border: none;
             }}
             QPushButton:hover {{ background: {t["btn_hover"]}; }}
-        """
-        )
+        """)
 
         for value, btn in self._category_buttons.items():
             btn.setStyleSheet(active if value == self._category else inactive)
@@ -180,5 +223,12 @@ class AddTaskModal(QDialog):
         title = self.title_input.text().strip()
         due = None
         if self.has_due.isChecked():
-            due = self.due_dt.dateTime().toPyDateTime().isoformat()
+            due = (
+                QDateTime(
+                    self.due_date.date(),
+                    self.due_time.time(),
+                )
+                .toPyDateTime()
+                .isoformat()
+            )
         return title, due, self._category, self._is_important

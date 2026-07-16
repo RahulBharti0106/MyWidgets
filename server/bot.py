@@ -20,7 +20,7 @@ from telegram.ext import (
 load_dotenv()
 
 
-ADD_TITLE, ADD_CATEGORY, ADD_DUE = range(3)
+ADD_TITLE, ADD_CATEGORY, ADD_DUE, ADD_CUSTOM_DATE = range(4)
 LIST_PAGE_SIZE = 5
 _http_client: Optional[httpx.AsyncClient] = None
 
@@ -62,6 +62,11 @@ def build_bot_application() -> Application:
                 CallbackQueryHandler(add_choose_category, pattern=r"^addcat:")
             ],
             ADD_DUE: [CallbackQueryHandler(add_choose_due, pattern=r"^adddue:")],
+            ADD_CUSTOM_DATE: [
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND, add_receive_custom_date
+                )
+            ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         allow_reentry=True,
@@ -159,6 +164,35 @@ def _due_from_choice(choice: str) -> tuple[Optional[str], str]:
         hour=23, minute=59, second=0, microsecond=0
     )
     return due.replace(tzinfo=None).isoformat(), "this week"
+
+
+def _create_add_payload(context: ContextTypes.DEFAULT_TYPE, due_iso: Optional[str]) -> dict[str, Any]:
+    task_data = context.user_data.get("add_task", {})
+    return {
+        "title": task_data["title"],
+        "category": task_data["category"],
+        "is_important": False,
+        "due": due_iso,
+    }
+
+
+def _parse_custom_due_input(raw_value: str) -> Optional[str]:
+    value = raw_value.strip()
+    formats = [
+        ("%d/%m/%Y %H:%M", True),
+        ("%d/%m/%Y", False),
+    ]
+    for fmt, has_time in formats:
+        try:
+            parsed = datetime.strptime(value, fmt)
+            if not has_time:
+                parsed = parsed.replace(hour=23, minute=59, second=0, microsecond=0)
+            else:
+                parsed = parsed.replace(second=0, microsecond=0)
+            return parsed.isoformat()
+        except ValueError:
+            continue
+    return None
 
 
 def _format_task_lines(tasks: list[dict[str, Any]], offset: int = 0) -> str:
@@ -309,6 +343,11 @@ async def add_choose_category(
                 InlineKeyboardButton("This week", callback_data="adddue:week"),
                 InlineKeyboardButton("No due date", callback_data="adddue:none"),
             ],
+            [
+                InlineKeyboardButton(
+                    "📅 Custom date", callback_data="adddue:custom"
+                )
+            ],
         ]
     )
     await query.edit_message_text("Choose a due date:", reply_markup=keyboard)
@@ -319,14 +358,14 @@ async def add_choose_due(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     await query.answer()
     choice = query.data.split(":", 1)[1]
+    if choice == "custom":
+        await query.edit_message_text(
+            "Enter the due date in DD/MM/YYYY format (e.g. 25/12/2026). "
+            "You can also add a time like DD/MM/YYYY HH:MM."
+        )
+        return ADD_CUSTOM_DATE
     due_iso, due_label = _due_from_choice(choice)
-    task_data = context.user_data.get("add_task", {})
-    payload = {
-        "title": task_data["title"],
-        "category": task_data["category"],
-        "is_important": False,
-        "due": due_iso,
-    }
+    payload = _create_add_payload(context, due_iso)
     ok, result = await _api_request(context, "POST", "/tasks", json_data=payload)
     context.user_data.pop("add_task", None)
     if not ok:
@@ -334,6 +373,30 @@ async def add_choose_due(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return ConversationHandler.END
     await query.edit_message_text(
         f'✅ Added "{result["title"]}" to {result["category"]}, due {due_label}.'
+    )
+    return ConversationHandler.END
+
+
+async def add_receive_custom_date(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    due_iso = _parse_custom_due_input(update.message.text)
+    if due_iso is None:
+        await update.message.reply_text(
+            "Couldn't understand that date. Please use DD/MM/YYYY "
+            "(e.g. 25/12/2026)."
+        )
+        return ADD_CUSTOM_DATE
+
+    payload = _create_add_payload(context, due_iso)
+    ok, result = await _api_request(context, "POST", "/tasks", json_data=payload)
+    context.user_data.pop("add_task", None)
+    if not ok:
+        await update.message.reply_text(f"Could not add task. {result}")
+        return ConversationHandler.END
+
+    await update.message.reply_text(
+        f'✅ Added "{result["title"]}" to {result["category"]}, due {due_iso[:16]}.'
     )
     return ConversationHandler.END
 
