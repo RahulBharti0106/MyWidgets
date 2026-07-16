@@ -16,7 +16,6 @@ from telegram.ext import (
     filters,
 )
 
-
 load_dotenv()
 
 
@@ -29,9 +28,7 @@ def build_bot_application() -> Application:
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     owner_api_key = os.getenv("OWNER_API_KEY", "").strip()
     if not token:
-        raise RuntimeError(
-            "TELEGRAM_BOT_TOKEN is required to start the Telegram bot."
-        )
+        raise RuntimeError("TELEGRAM_BOT_TOKEN is required to start the Telegram bot.")
     if not owner_api_key:
         raise RuntimeError(
             "OWNER_API_KEY is required so the bot can call the internal API."
@@ -63,9 +60,7 @@ def build_bot_application() -> Application:
             ],
             ADD_DUE: [CallbackQueryHandler(add_choose_due, pattern=r"^adddue:")],
             ADD_CUSTOM_DATE: [
-                MessageHandler(
-                    filters.TEXT & ~filters.COMMAND, add_receive_custom_date
-                )
+                MessageHandler(filters.TEXT & ~filters.COMMAND, add_receive_custom_date)
             ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
@@ -107,15 +102,13 @@ def _parse_allowed_telegram_ids() -> set[int]:
     return result
 
 
-async def _ensure_allowed(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> bool:
+async def _ensure_allowed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     user = update.effective_user
     allowed_ids = context.application.bot_data.get("allowed_ids", set())
     if user is not None and user.id in allowed_ids:
         return True
 
-    message = "Access is restricted for this bot."
+    message = "Access is restricted for this user."
     if update.message is not None:
         await update.message.reply_text(message)
     elif update.callback_query is not None:
@@ -166,7 +159,9 @@ def _due_from_choice(choice: str) -> tuple[Optional[str], str]:
     return due.replace(tzinfo=None).isoformat(), "this week"
 
 
-def _create_add_payload(context: ContextTypes.DEFAULT_TYPE, due_iso: Optional[str]) -> dict[str, Any]:
+def _create_add_payload(
+    context: ContextTypes.DEFAULT_TYPE, due_iso: Optional[str]
+) -> dict[str, Any]:
     task_data = context.user_data.get("add_task", {})
     return {
         "title": task_data["title"],
@@ -332,7 +327,9 @@ async def add_choose_category(
 ) -> int:
     query = update.callback_query
     await query.answer()
-    context.user_data.setdefault("add_task", {})["category"] = query.data.split(":", 1)[1]
+    context.user_data.setdefault("add_task", {})["category"] = query.data.split(":", 1)[
+        1
+    ]
     keyboard = InlineKeyboardMarkup(
         [
             [
@@ -343,11 +340,7 @@ async def add_choose_category(
                 InlineKeyboardButton("This week", callback_data="adddue:week"),
                 InlineKeyboardButton("No due date", callback_data="adddue:none"),
             ],
-            [
-                InlineKeyboardButton(
-                    "📅 Custom date", callback_data="adddue:custom"
-                )
-            ],
+            [InlineKeyboardButton("📅 Custom date", callback_data="adddue:custom")],
         ]
     )
     await query.edit_message_text("Choose a due date:", reply_markup=keyboard)
@@ -362,6 +355,7 @@ async def add_choose_due(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await query.edit_message_text(
             "Enter the due date in DD/MM/YYYY format (e.g. 25/12/2026). "
             "You can also add a time like DD/MM/YYYY HH:MM."
+            "(e.g.= 27/11/2026 12:30)"
         )
         return ADD_CUSTOM_DATE
     due_iso, due_label = _due_from_choice(choice)
@@ -384,7 +378,7 @@ async def add_receive_custom_date(
     if due_iso is None:
         await update.message.reply_text(
             "Couldn't understand that date. Please use DD/MM/YYYY "
-            "(e.g. 25/12/2026)."
+            "(e.g. 25/12/2026 or 17/01/2026)."
         )
         return ADD_CUSTOM_DATE
 
@@ -456,9 +450,7 @@ async def delete_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await _send_action_page(update.message, context, "delete", 0)
 
 
-async def important_command(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
+async def important_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not await _ensure_allowed(update, context):
         return
     await _send_action_page(update.message, context, "important", 0)
