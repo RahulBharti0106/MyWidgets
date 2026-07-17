@@ -2,7 +2,6 @@ import hashlib
 import os
 import secrets
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
@@ -54,11 +53,13 @@ class Task(SQLModel, table=True):
     user: Optional[User] = Relationship(back_populates="tasks")
 
 
-BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_DATABASE_URL = f"sqlite:///{(BASE_DIR / 'mywidgets.db').as_posix()}"
-DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required — no local database fallback "
+        "is supported."
+    )
+engine = create_engine(DATABASE_URL)
 
 
 def get_session():

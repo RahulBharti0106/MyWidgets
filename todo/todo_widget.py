@@ -157,6 +157,7 @@ class DesktopTodoWidget(QWidget):
     def _setup_sync(self):
         self.sync_manager = SyncManager(self)
         self.sync_manager.tasks_updated.connect(self._reload_tasks_from_disk)
+        self.sync_manager.new_tasks_arrived.connect(self._notify_new_tasks)
         self.sync_manager.start()
 
     def _current_category(self) -> str:
@@ -242,6 +243,23 @@ class DesktopTodoWidget(QWidget):
     def _reload_tasks_from_disk(self):
         self.tasks = StorageManager.load_tasks()
         self._populate_tasks()
+
+    def _notify_new_tasks(self, tasks: list):
+        if not tasks:
+            return
+        if len(tasks) == 1:
+            message = f"New task added: {tasks[0]['title']}"
+        else:
+            preview = ", ".join(task["title"] for task in tasks[:3])
+            message = f"{len(tasks)} new tasks added while you were away"
+            if preview:
+                message = f"{message}: {preview}"
+        self.tray.showMessage(
+            "Desktop To-Do",
+            message,
+            QSystemTrayIcon.MessageIcon.Information,
+            4000,
+        )
 
     def _save_state(self):
         geo = self.geometry()

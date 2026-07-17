@@ -26,6 +26,7 @@ class SyncManager(QThread):
     """
 
     tasks_updated = pyqtSignal()
+    new_tasks_arrived = pyqtSignal(list)
 
     SETTINGS_SYNC_KEY = "last_sync_timestamp"
     SETTINGS_PENDING_DELETES_KEY = "pending_deletions"
@@ -34,6 +35,7 @@ class SyncManager(QThread):
         super().__init__(parent)
         self._server_url = os.getenv("SERVER_URL", "").strip().rstrip("/")
         self._api_key = os.getenv("API_KEY", "").strip()
+        self._consecutive_sync_failures = 0
 
     @staticmethod
     def _utc_now_iso() -> str:
@@ -164,8 +166,16 @@ class SyncManager(QThread):
                 response.raise_for_status()
                 sync_payload = response.json()
             except httpx.HTTPError as exc:
+                self._consecutive_sync_failures += 1
                 print(f"Sync failed: could not reach server ({exc})")
+                if self._consecutive_sync_failures >= 5:
+                    print(
+                        "Sync has failed "
+                        f"{self._consecutive_sync_failures} times — check network/server"
+                    )
                 return
+
+            self._consecutive_sync_failures = 0
 
             local_tasks = self._load_tasks_payload()
             local_order = [task["id"] for task in local_tasks]
@@ -175,6 +185,7 @@ class SyncManager(QThread):
             server_updates: dict[str, dict] = {}
             cleared_pending_sync_ids = set()
             confirmed_deleted_ids = set()
+            newly_arrived_tasks = []
 
             for server_task in sync_payload.get("tasks", []):
                 task_id = server_task["id"]
@@ -197,6 +208,7 @@ class SyncManager(QThread):
                     local_map[task_id] = server_record
                     local_order.append(task_id)
                     server_updates[task_id] = server_record
+                    newly_arrived_tasks.append(server_record)
                     changed = True
                     continue
 
@@ -287,6 +299,11 @@ class SyncManager(QThread):
 
         if changed:
             self.tasks_updated.emit()
+        if (
+            last_sync_timestamp != "1970-01-01T00:00:00"
+            and newly_arrived_tasks
+        ):
+            self.new_tasks_arrived.emit(newly_arrived_tasks)
 
     @staticmethod
     def _server_to_local_record(server_task: dict) -> dict:

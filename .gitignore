@@ -12,7 +12,9 @@ env/
 .env
 server/.env
 
+
 # Local databases
+*.db
 mywidgets.db
 server/mywidgets.db
 

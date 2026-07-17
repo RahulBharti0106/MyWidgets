@@ -1,6 +1,6 @@
 # MyWidgets Server
 
-Phase 1 foundation for the MyWidgets desktop app. This server provides a FastAPI REST API backed by SQLModel and SQLite for task sync.
+Phase 1 foundation for the MyWidgets desktop app. This server provides a FastAPI REST API backed by SQLModel and Postgres (Neon) for task sync.
 
 ## Local Setup
 
@@ -18,7 +18,7 @@ Fill in the values in `.env`, then start the server:
 python main.py
 ```
 
-If `DATABASE_URL` is omitted, local development defaults to `server/mywidgets.db`.
+`DATABASE_URL` is required. The server does not support any local database fallback.
 
 API docs:
 
@@ -96,4 +96,4 @@ uvicorn main:app --host 0.0.0.0 --port $PORT
 - Task deletes are soft deletes only.
 - `/tasks/sync` includes deleted tasks so clients can remove them locally.
 - All task routes are scoped to the authenticated user.
-- The local SQLite default is anchored to the `server/` folder, not the shell launch directory.
+- Postgres (Neon) via `DATABASE_URL` is required in every environment.
